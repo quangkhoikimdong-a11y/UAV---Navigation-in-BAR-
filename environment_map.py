@@ -11,9 +11,8 @@ class EnvironmentMap:
         self.obstacles = self._load_csv_map()
         self.bounds = self._calculate_bounds()
 
-        # Updated Start coordinate extracted from the new reference image (X=55, Y=50)
-        # Goal remains behind the bugtrap to force the BAR trap
-        self.start = Point(55, 50)
+        # Shifted left to X=5 to sit perfectly in the open vertical channel
+        self.start = Point(5, 130)
         self.goal = Point(190, 100)
 
     def _load_csv_map(self):
@@ -68,25 +67,20 @@ class EnvironmentMap:
         ax.set_ylim(self.bounds[2], self.bounds[3])
         ax.grid(True, linestyle='--', color='gray', alpha=0.5)
 
-        # Plot the edges and hatch the interior
         for obs in self.obstacles:
             x, y = obs.exterior.xy
             ax.plot(x, y, color='black', linewidth=2, zorder=3)
             ax.fill(x, y, alpha=0.2, fc='gray', hatch='//', zorder=2)
 
-        # Plot UAV
         ax.plot(self.start.x, self.start.y, 'ko', markersize=8, zorder=5)
         ax.annotate('UAV', (self.start.x - 5, self.start.y - 8), fontweight='bold')
 
-        # Plot Goal
         ax.plot(self.goal.x, self.goal.y, 'r*', markersize=12, zorder=5)
         ax.annotate('Goal', (self.goal.x - 4, self.goal.y + 6), fontweight='bold')
 
-        # Vision Circle
         vision_circle = plt.Circle((self.start.x, self.start.y), self.sensor_radius, color='blue', fill=False, linestyle=':')
         ax.add_patch(vision_circle)
 
-        # Calculate greedy line-of-sight arrow pointing towards the goal
         dx = self.goal.x - self.start.x
         dy = self.goal.y - self.start.y
         magnitude = math.sqrt(dx**2 + dy**2)
@@ -94,7 +88,7 @@ class EnvironmentMap:
         ax.arrow(self.start.x, self.start.y, (dx/magnitude)*arrow_length, (dy/magnitude)*arrow_length,
                  head_width=3, head_length=4, fc='k', ec='k', alpha=0.6, zorder=4)
 
-        plt.title("UAV Environment: Blind Alley Region (BAR) Trap", fontsize=14, fontweight='bold')
+        plt.title("UAV Environment: Verify Start Point", fontsize=14, fontweight='bold')
         plt.xlabel("X Coordinate")
         plt.ylabel("Y Coordinate")
         plt.show()
