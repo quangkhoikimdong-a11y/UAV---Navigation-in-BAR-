@@ -4,23 +4,23 @@ import csv
 import os
 
 # ==========================================
-# 1. GENERATE THE FLATTENED LOOSE ZIG-ZAG
+# 1. GENERATE THE SHIFTED ZIG-ZAG (+25 X, +25 Y)
 # ==========================================
 csv_content = """x
-40, 175
-160, 175
-160, 25
-40, 25
-40, 70
-75, 45
-105, 75
-135, 65
-150, 80
-150, 110
-135, 95
-105, 105
-75, 75
-40, 100"""
+65, 200
+185, 200
+185, 50
+65, 50
+65, 95
+100, 80
+130, 95
+160, 90
+175, 100
+175, 115
+160, 105
+130, 110
+100, 95
+65, 110"""
 
 file_name = "gauntlet_canyon_loose.csv"
 
@@ -36,8 +36,10 @@ class MapVisualizer:
     def __init__(self, map_filename):
         self.map_filename = map_filename
         self.obstacles = self._load_csv_map()
-        self.start = (20, 100)
-        self.goal = (180, 100)
+        # Shifted Start and Goal Y up by 25 to match the new tunnel entrance
+        # Goal X pushed out to 200 to clear the new wall at X=185
+        self.start = (20, 125)
+        self.goal = (200, 125)
 
     def _load_csv_map(self):
         obstacles = []
@@ -71,12 +73,13 @@ class MapVisualizer:
 
     def plot(self):
         fig, ax = plt.subplots(figsize=(8, 8))
-        ax.set_xlim(0, 200)
-        ax.set_ylim(0, 200)
+        # Expanded bounds to 220 to fit the new shifted coordinates comfortably
+        ax.set_xlim(0, 220)
+        ax.set_ylim(0, 220)
         ax.set_aspect('equal') # Keeps circles round!
         ax.grid(True, linestyle='--', color='gray', alpha=0.3)
 
-        # Draw the loosened trap
+        # Draw the shifted trap
         for obs in self.obstacles:
             x, y = obs.exterior.xy
             ax.plot(x, y, color='black', linewidth=2, zorder=2)
@@ -89,7 +92,7 @@ class MapVisualizer:
         ax.plot(self.goal[0], self.goal[1], 'r*', markersize=15, label='Goal', zorder=5)
         ax.annotate('Goal', (self.goal[0]-5, self.goal[1]-15), color='red', fontweight='bold')
 
-        plt.title("Custom Map: 'Loose' Zig-Zag (Peak Flattened)", fontweight='bold')
+        plt.title("Custom Map: Shifted Zig-Zag (+25 Right, +25 Up)", fontweight='bold')
         plt.show()
 
 if __name__ == "__main__":
