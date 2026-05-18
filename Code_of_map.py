@@ -39,7 +39,7 @@ class MapVisualizer:
         # Shifted Start and Goal Y up by 25 to match the new tunnel entrance
         # Goal X pushed out to 200 to clear the new wall at X=185
         self.start = (20, 125)
-        self.goal = (200, 125)
+        self.goal = (200, 75)
 
     def _load_csv_map(self):
         obstacles = []
