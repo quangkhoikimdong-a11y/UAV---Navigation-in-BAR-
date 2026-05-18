@@ -63,10 +63,9 @@ class UAVNavigator:
         self.trajectory = [self.start] 
         self.alg1_dap_paths = []       
         
-        # Using Shapely Polygons (Convex Hulls) for stable rendering
         self.funnel_polygons = [] 
         self.graph_paths_to_draw = [] 
-        self.rankings_log = []
+        self.rankings_log = [] # <-- This was filling up, but not saving!
         
         self.fig, self.ax = plt.subplots(figsize=(10, 10)) 
         self._init_plot()
@@ -212,15 +211,9 @@ class UAVNavigator:
         return smoothed
 
     def build_funnel_bundles(self, sequence_F, dap_path):
-        """ 
-        Extracts the bypassed nodes and wraps them in a Convex Hull. 
-        This prevents self-intersecting polygon errors in Matplotlib while still 
-        accurately showing the regional bundle of line segments.
-        """
         if len(sequence_F) < 3 or len(dap_path) < 2: return 
         
         try:
-            # Map exact node indices to avoid float bugs
             indices = [sequence_F.index(p) for p in dap_path]
         except ValueError:
             return
@@ -229,7 +222,6 @@ class UAVNavigator:
             idx1 = indices[i]
             idx2 = indices[i+1]
             
-            # If nodes were bypassed, wrap them in a rendering bundle
             if abs(idx1 - idx2) > 1:
                 start_idx = min(idx1, idx2)
                 end_idx = max(idx1, idx2)
@@ -237,7 +229,6 @@ class UAVNavigator:
                 cluster = sequence_F[start_idx : end_idx + 1]
                 coords = [(p.x, p.y) for p in cluster]
                 
-                # Convex Hull guarantees Matplotlib won't throw a fit
                 poly = Polygon(coords).convex_hull
                 if not poly.is_empty:
                     self.funnel_polygons.append(poly)
@@ -313,7 +304,6 @@ class UAVNavigator:
                 sequence_F = self.extract_sequence_F(current_node, new_node)
                 dap_path = self.DAP_Algorithm_1(sequence_F)
                 
-                # Extract the guaranteed-to-render Convex Hull bundles
                 self.build_funnel_bundles(sequence_F, dap_path)
                 
                 self.graph_paths_to_draw.append(([p.x for p in sequence_F], [p.y for p in sequence_F]))
@@ -328,13 +318,10 @@ class UAVNavigator:
             self.all_visited_points.append(current_node.point)
             
         # --- RENDERING ---
-        
-        # Draw the Convex Hull bundles safely
         for poly in self.funnel_polygons:
             x, y = poly.exterior.xy
             self.ax.fill(x, y, alpha=0.35, fc='lightgreen', ec='green', zorder=3)
 
-        # Draw the jagged graph underneath
         for (x_coords, y_coords) in self.graph_paths_to_draw:
             self.ax.plot(x_coords, y_coords, color='gray', linestyle=':', linewidth=2, alpha=0.8, zorder=4)
 
@@ -351,10 +338,18 @@ class UAVNavigator:
         plt.show()
 
     def save_logs(self):
+        # 1. Save Coordinates
         with open(os.path.join(self.log_dir, 'historical_coords.csv'), 'w', newline='') as f:
             writer = csv.writer(f)
             writer.writerow(['step_index', 'x', 'y'])
             for i, p in enumerate(self.trajectory): writer.writerow([i, round(p.x, 2), round(p.y, 2)])
+            
+        # 2. RESTORED: Save Rankings
+        with open(os.path.join(self.log_dir, 'open_points_rankings.csv'), 'w', newline='') as f:
+            writer = csv.writer(f)
+            writer.writerow(['step_index', 'target_x', 'target_y', 'cost'])
+            writer.writerows(self.rankings_log)
+            
         print("Data Logs Saved Successfully.")
 
 if __name__ == "__main__":
