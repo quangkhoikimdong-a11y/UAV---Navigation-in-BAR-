@@ -122,10 +122,16 @@ self.goal = Point(200, 75)    # Target position
 - **Code**: Dynamically splits wide sights proportionally based on angular width
 - **Why**: More flexible for diverse environment shapes and obstacle configurations
 
-#### 4. **Path Bundles & Funnels**
-- **Paper**: Formal sequences with vertex disjointness constraints
-- **Code**: Simplified convex hull construction between DAP segment endpoints
-- **Why**: Computationally efficient while maintaining geometric correctness
+#### 4. **Path Bundles & Funnels - INTENTIONAL SIMPLIFICATION**
+- **Paper**: Describes formal bundles of line segments with vertex constraints and disjoint vertex property
+- **Code**: Simplified to convex hull regions between DAP segment endpoints
+- **Why**: 
+  - The paper does not provide explicit formulas for bundle construction
+  - Angle constraint enforcement (θ < threshold) source not found in provided paper sections
+  - Convex hull approach captures the geometric essence: "regions trapped between raw path and shortened DAP path"
+  - Computationally efficient for visualization and analysis
+- **What it represents**: The "funnel" regions showing which waypoints were optimized during DAP escape
+- **Accuracy**: Functionally correct for demonstrating path optimization; formally simplified from full bundle definition
 
 #### 5. **DAP Algorithm (Algorithm 1)**
 - **Paper**: Iterative coordinate-descent with convergence threshold δ
@@ -139,7 +145,7 @@ The generated plot shows:
 - **Blue circle**: Robot's vision range at each step (radius r=15)
 - **Red line**: Main trajectory from start to goal
 - **Gold line**: DAP escape paths (when blind alleys are encountered)
-- **Green shaded areas**: Funnel/bundle regions created during escape
+- **Green shaded areas**: Funnel/bundle regions showing optimized path segments
 - **Gray dotted line**: Raw jagged paths from memory before smoothing
 
 ## Output Files
@@ -169,6 +175,8 @@ step_index, target_x, target_y, cost
 - `UAVNavigator`: Main controller class
 - `scan_neighbor_open_points(origin)`: Ray-casts 72 angles to find open sights and extract candidate waypoints
 - `DAP_Algorithm_1(sequence_F)`: Path smoothing via greedy line-of-sight shortcuts
+- `extract_sequence_F()`: Reconstructs jagged memory path between two nodes
+- `build_funnel_bundles()`: Creates convex hull visualization of optimized regions
 - `run_navigation(max_steps)`: Main execution loop with BAR detection
 - `check_line_of_sight(p1, p2)`: Verifies obstacle-free path using Shapely geometry
 
@@ -244,9 +252,23 @@ A: Reduce `max_steps` or decrease `num_rays` in `scan_neighbor_open_points()` (d
 **Q: Robot ignores certain open directions?**  
 A: Check `MIN_NODE_SPACING` threshold (line 241). Visited point clustering may be filtering options.
 
+**Q: What about the angle constraints and bundle disjoint vertex property?**  
+A: These formal properties were simplified for practical implementation. The paper doesn't provide explicit formulas for their construction or enforcement, so the convex hull visualization captures the geometric concept without formal constraint checking.
+
 ## Based On
 
 This implementation is based on academic research in autonomous robot navigation and path planning for unknown environments with limited sensor range. See **Implementation Notes** section for specific differences between theory and practice.
+
+## Notes on Simplifications
+
+This code makes intentional engineering trade-offs to be practical while maintaining algorithmic correctness:
+
+- **Bundle Construction**: Simplified from formal vertex-constrained sequences to convex hull regions for computational efficiency
+- **Angle Constraints**: Not implemented due to ambiguity in source material regarding explicit constraint definitions
+- **DAP Algorithm**: One-pass greedy instead of iterative descent for deterministic real-time behavior
+- **Ray Casting**: Practical geometric implementation of abstract open sight concept
+
+All core algorithmic behaviors (BAR detection, memory-based escape, path smoothing via line-of-sight) are preserved and functional.
 
 ## License
 
