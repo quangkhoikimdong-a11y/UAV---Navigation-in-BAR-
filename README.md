@@ -111,25 +111,19 @@ self.goal = Point(200, 75)    # Target position
 - **Code**: Implements via 72 ray-casting - each ray tests if line-of-sight exists to vision boundary
 - **Why**: Computationally precise and easy to simulate with Shapely geometry library
 
-#### 2. **Angular Penalty in Ranking**
-- **Paper**: Ranks open points primarily by distance toward goal
-- **Code**: Adds `β × angular_penalty` term to discourage sharp turns
-- **Why**: Practical improvement for realistic robot control - prevents jerky, inefficient paths
-- **Trade-off**: Slightly deviates from pure distance-based ranking but produces smoother trajectories
-
-#### 3. **Adaptive Point Extraction**
+#### 2. **Adaptive Point Extraction**
 - **Paper**: References static front/side/back sight directions (formalized in Definition 3.1)
 - **Code**: Dynamically splits wide sights proportionally based on angular width
 - **Why**: More flexible for diverse environment shapes and obstacle configurations
 
-#### 4. **Path Bundles & Funnels - Implementation Approach**
+#### 3. **Path Bundles & Funnels - Implementation Approach**
 - **Paper**: Defines bundles of line segments as connections from past robot coordinates to visible obstacle vertices, forming a visibility-based structure
 - **Code**: Implements bundles using a simplified approach: extracts the robot's historical waypoint trajectory and applies convex hull visualization to show optimization regions
 - **Equivalence**: Both approaches use the same core principle—the paper's visibility structure and this code's waypoint sequences both serve to identify paths that can be optimized via line-of-sight shortcuts
 - **Rationale**: The waypoint-based representation achieves the same functional outcome (finding optimized escape paths) while being computationally more straightforward for the simulation
 - **Visualization**: The convex hull regions show which portions of the retrieved path were compressed through DAP optimization
 
-#### 5. **DAP Algorithm (Algorithm 1)**
+#### 4. **DAP Algorithm (Algorithm 1)**
 - **Paper**: Describes iterative coordinate-descent with convergence threshold δ
 - **Code**: One-pass greedy line-of-sight shortcut
 - **Justification**: The greedy approach converges immediately to a valid solution by finding the farthest reachable point at each step. This achieves near-optimal path shortening while being deterministic and computationally efficient
