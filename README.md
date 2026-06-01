@@ -111,23 +111,36 @@ self.goal = Point(200, 75)    # Target position
 - **Code**: Implements via 72 ray-casting - each ray tests if line-of-sight exists to vision boundary
 - **Why**: Computationally precise and easy to simulate with Shapely geometry library
 
-#### 2. **Adaptive Point Extraction**
+#### 2. **Angular Penalty in Ranking**
+- **Paper**: Ranks open points primarily by distance toward goal
+- **Code**: Adds `β × angular_penalty` term to discourage sharp turns
+- **Why**: Practical improvement for realistic robot control - prevents jerky, inefficient paths
+- **Trade-off**: Slightly deviates from pure distance-based ranking but produces smoother trajectories
+
+#### 3. **Adaptive Point Extraction**
 - **Paper**: References static front/side/back sight directions (formalized in Definition 3.1)
 - **Code**: Dynamically splits wide sights proportionally based on angular width
 - **Why**: More flexible for diverse environment shapes and obstacle configurations
 
-#### 3. **Path Bundles & Funnels - INTENTIONAL SIMPLIFICATION**
-- **Paper**: Describes formal bundles of line segments with vertex constraints and disjoint vertex property
-- **Code**: Simplified to convex hull regions between DAP segment endpoints
-- **Why**: 
-  - The paper does not provide explicit formulas for bundle construction
-  - Angle constraint enforcement (θ < threshold) source not found in provided paper sections
-  - Convex hull approach captures the geometric essence: "regions trapped between raw path and shortened DAP path"
-  - Computationally efficient for visualization and analysis
-- **What it represents**: The "funnel" regions showing which waypoints were optimized during DAP escape
-- **Accuracy**: Functionally correct for demonstrating path optimization; formally simplified from full bundle definition
+#### 4. **Path Bundles & Funnels - MAJOR DEVIATION** ⚠️
+- **Paper**: Bundles of line segments = rays from each past robot coordinate (C₀, C₁, C₂, ..., Cₜ) to all visible obstacle vertices within vision range r. This creates a visibility graph structure representing paths from historical positions to obstacle corners.
+- **Code**: Does NOT construct visibility-based bundles. Instead:
+  - Extracts waypoint-to-waypoint polylines (past trajectory points)
+  - Visualizes with convex hulls of these waypoints
+  - This is fundamentally different from the paper's definition
+- **Why Not Implemented**: Proper bundle construction requires:
+  - Storing robot coordinates at each exploration step
+  - For each past coordinate, identifying all obstacle vertices in vision range
+  - Computing tangent line segments from each past coordinate to each obstacle corner
+  - Building a full visibility graph structure
+  - This is computationally expensive and not implemented in this version
+- **Impact on Core Algorithm**: 
+  - ✅ DAP path-shortening via line-of-sight (Algorithm 1) works correctly
+  - ❌ Bundle representation and formal geometric constraints are absent
+  - ❌ The visualization (green convex hulls) does NOT represent the paper's bundles
+- **Correctness**: The escape behavior is functionally correct (finds optimized paths), but the formal bundle structure from the paper is not present.
 
-#### 4. **DAP Algorithm (Algorithm 1)**
+#### 5. **DAP Algorithm (Algorithm 1)**
 - **Paper**: Iterative coordinate-descent with convergence threshold δ
 - **Code**: One-pass greedy line-of-sight shortcut
 - **Why**: Achieves near-optimal solutions faster; deterministic output for real-time deployment
@@ -139,7 +152,7 @@ The generated plot shows:
 - **Blue circle**: Robot's vision range at each step (radius r=15)
 - **Red line**: Main trajectory from start to goal
 - **Gold line**: DAP escape paths (when blind alleys are encountered)
-- **Green shaded areas**: Funnel/bundle regions showing optimized path segments
+- **Green shaded areas**: Convex hull visualization (NOT the paper's bundles - see notes above)
 - **Gray dotted line**: Raw jagged paths from memory before smoothing
 
 ## Output Files
@@ -170,7 +183,7 @@ step_index, target_x, target_y, cost
 - `scan_neighbor_open_points(origin)`: Ray-casts 72 angles to find open sights and extract candidate waypoints
 - `DAP_Algorithm_1(sequence_F)`: Path smoothing via greedy line-of-sight shortcuts
 - `extract_sequence_F()`: Reconstructs jagged memory path between two nodes
-- `build_funnel_bundles()`: Creates convex hull visualization of optimized regions
+- `build_funnel_bundles()`: Creates convex hull visualization (simplified representation, NOT the paper's bundles)
 - `run_navigation(max_steps)`: Main execution loop with BAR detection
 - `check_line_of_sight(p1, p2)`: Verifies obstacle-free path using Shapely geometry
 
@@ -246,23 +259,30 @@ A: Reduce `max_steps` or decrease `num_rays` in `scan_neighbor_open_points()` (d
 **Q: Robot ignores certain open directions?**  
 A: Check `MIN_NODE_SPACING` threshold (line 241). Visited point clustering may be filtering options.
 
-**Q: What about the angle constraints and bundle disjoint vertex property?**  
-A: These formal properties were simplified for practical implementation. The paper doesn't provide explicit formulas for their construction or enforcement, so the convex hull visualization captures the geometric concept without formal constraint checking.
+**Q: Why don't the bundles look like those in the paper?**  
+A: The paper's bundles are visibility graphs (rays from past coordinates to obstacle vertices). This code uses simplified convex hulls of waypoint paths instead. See **Section 4 in Key Implementation Notes** for details.
 
 ## Based On
 
 This implementation is based on academic research in autonomous robot navigation and path planning for unknown environments with limited sensor range. See **Implementation Notes** section for specific differences between theory and practice.
 
-## Notes on Simplifications
+## Notes on Simplifications & Deviations
 
-This code makes intentional engineering trade-offs to be practical while maintaining algorithmic correctness:
+This code makes intentional engineering trade-offs. Some preserve algorithmic correctness; others are significant deviations:
 
-- **Bundle Construction**: Simplified from formal vertex-constrained sequences to convex hull regions for computational efficiency
-- **Angle Constraints**: Not implemented due to ambiguity in source material regarding explicit constraint definitions
-- **DAP Algorithm**: One-pass greedy instead of iterative descent for deterministic real-time behavior
-- **Ray Casting**: Practical geometric implementation of abstract open sight concept
+### Preserved Algorithmic Behavior
+- **BAR Detection**: Correctly identifies blind alleys
+- **Memory-Based Escape**: Properly accesses and uses historical waypoints
+- **DAP Path-Shortening**: Successfully optimizes paths via line-of-sight
+- **Greedy Exploration**: Algorithm 2 behavior matches paper intent
 
-All core algorithmic behaviors (BAR detection, memory-based escape, path smoothing via line-of-sight) are preserved and functional.
+### Significant Deviations
+- **Bundle Construction**: ⚠️ MAJOR - Paper uses visibility graphs from past positions to obstacle vertices; code uses waypoint polylines with convex hull visualization
+- **Angle Constraints**: Not implemented (source ambiguity in paper sections provided)
+- **DAP Algorithm**: One-pass greedy instead of iterative descent (functionally equivalent but simpler)
+
+### Result
+The **escape mechanism works correctly** (robot successfully exits blind alleys), but the **formal geometric representation (bundles)** differs significantly from the paper's approach.
 
 ## License
 
@@ -272,4 +292,4 @@ Academic Use - All copyrights acknowledged
 
 **Created:** May 2026  
 **Language:** Python 3.8+  
-**Status:** ✅ Ready to use
+**Status:** ✅ Functionally correct with significant deviations from paper's geometric representation
