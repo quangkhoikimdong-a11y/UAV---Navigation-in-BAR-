@@ -111,18 +111,12 @@ self.goal = Point(200, 75)    # Target position
 - **Code**: Implements via 72 ray-casting - each ray tests if line-of-sight exists to vision boundary
 - **Why**: Computationally precise and easy to simulate with Shapely geometry library
 
-#### 2. **Angular Penalty in Ranking**
-- **Paper**: Ranks open points primarily by distance toward goal
-- **Code**: Adds `β × angular_penalty` term to discourage sharp turns
-- **Why**: Practical improvement for realistic robot control - prevents jerky, inefficient paths
-- **Trade-off**: Slightly deviates from pure distance-based ranking but produces smoother trajectories
-
-#### 3. **Adaptive Point Extraction**
+#### 2. **Adaptive Point Extraction**
 - **Paper**: References static front/side/back sight directions (formalized in Definition 3.1)
 - **Code**: Dynamically splits wide sights proportionally based on angular width
 - **Why**: More flexible for diverse environment shapes and obstacle configurations
 
-#### 4. **Path Bundles & Funnels - INTENTIONAL SIMPLIFICATION**
+#### 3. **Path Bundles & Funnels - INTENTIONAL SIMPLIFICATION**
 - **Paper**: Describes formal bundles of line segments with vertex constraints and disjoint vertex property
 - **Code**: Simplified to convex hull regions between DAP segment endpoints
 - **Why**: 
@@ -133,7 +127,7 @@ self.goal = Point(200, 75)    # Target position
 - **What it represents**: The "funnel" regions showing which waypoints were optimized during DAP escape
 - **Accuracy**: Functionally correct for demonstrating path optimization; formally simplified from full bundle definition
 
-#### 5. **DAP Algorithm (Algorithm 1)**
+#### 4. **DAP Algorithm (Algorithm 1)**
 - **Paper**: Iterative coordinate-descent with convergence threshold δ
 - **Code**: One-pass greedy line-of-sight shortcut
 - **Why**: Achieves near-optimal solutions faster; deterministic output for real-time deployment
